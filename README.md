@@ -1,5 +1,5 @@
-# # SISTEMA SMM POR JUAN DUQUE SMM 
-## PRUEBA LINKTIC 
+# # SISTEMA POR JUAN DUQUE 
+
 
 ### La prueba quedo a finalizar el modulo de pedido por que el tiempo de entrega se paso por implmentar arquitectura hexagonal 
 
