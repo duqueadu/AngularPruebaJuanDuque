@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
 
-  api: 'https://api.escuelajs.co/api/',
+  api: 'https://adusoftback-production.up.railway.app/api/',
 };
