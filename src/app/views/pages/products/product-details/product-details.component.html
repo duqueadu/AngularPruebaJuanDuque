@@ -90,11 +90,12 @@
             </ul>
             <b class="label-rating text-warning">4.5</b>
             <i class="dot"></i>
-            <span
-              class="label-rating fw-semibold"
-              [ngClass]="product.stock > 0 ? 'text-success' : 'text-danger'">
-              {{ product.stock > 0 ? 'Disponible (' + product.stock + ' unid.)' : 'Agotado' }}
-            </span>
+          <span
+            *ngIf="![12, 13, 14, 15].includes(product.id)"
+            class="label-rating fw-semibold"
+            [ngClass]="product.stock > 0 ? 'text-success' : 'text-danger'">
+            {{ product.stock > 0 ? 'Disponible (' + product.stock + ' unid.)' : 'Agotado' }}
+          </span>
           </div>
 
           <!-- Precio -->
