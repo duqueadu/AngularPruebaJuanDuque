@@ -185,7 +185,6 @@
             <button
               type="button"
               class="btn btn-warning"
-              [disabled]="product.stock <= 0"
               (click)="addProductToCart(product)">
               <i class="me-1 fa fa-shopping-basket"></i>
               {{ productInCartList ? 'Agregado al carrito' : 'Agregar al carrito' }}
