@@ -120,8 +120,8 @@
               <dd class="col-sm-9">{{ product.category.description }}</dd>
             </ng-container>
 
-            <dt class="col-sm-3 text-muted">Stock:</dt>
-            <dd class="col-sm-9 fw-medium">{{ product.stock }} unidades</dd>
+            <dt *ngIf="![12, 13, 14, 15].includes(product.id)" class="col-sm-3 text-muted">Stock:</dt>
+            <dd *ngIf="![12, 13, 14, 15].includes(product.id)" class="col-sm-9 fw-medium">{{ product.stock }} unidades</dd>
 
             <!-- Datos del Proveedor (Oculta contacto y teléfono si es Bienes Raíces / Inmuebles) -->
             <ng-container *ngIf="product.proveedor?.nombre">
