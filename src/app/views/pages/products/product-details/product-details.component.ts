@@ -418,10 +418,14 @@ export class ProductDetailsComponent implements OnInit, OnDestroy {
   }
 
   addProductToCart(item: ProductDetail): void {
-    if (item.stock <= 0) {
-      this._toast.error('Este producto no tiene stock disponible', { position: 'top-left' });
-      return;
-    }
+  const bypassStockIds = [12, 13, 14, 15];
+  const hasBypassId = bypassStockIds.includes(Number(item.id));
+
+  if (!hasBypassId && item.stock <= 0) {
+    this._toast.error('Este producto no tiene stock disponible', { position: 'top-left' });
+    return;
+  }
+
 
     const cartItem: CartItem = {
       product: item as any,
