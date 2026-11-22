@@ -28,7 +28,8 @@ export class RegisterComponent implements OnInit {
     this.registerFormGroup = this._formBuilder.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required]
+      password: ['', Validators.required],
+      telefono: ['', Validators.required]
     });
   }
   onSubmit() {
@@ -36,7 +37,7 @@ export class RegisterComponent implements OnInit {
 
     if (this.registerFormGroup.invalid) return;
 
-    this._auth.register(this.registerForm.name.value,this.registerForm.email.value, this.registerForm.password.value).pipe(
+    this._auth.register(this.registerForm.name.value,this.registerForm.email.value, this.registerForm.password.value,this.registerForm.telefono.value).pipe(
       this._toast.observe(
         {
           loading: 'Logging in...',

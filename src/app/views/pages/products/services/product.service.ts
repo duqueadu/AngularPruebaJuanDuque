@@ -23,7 +23,9 @@ export class ProductService {
 
   }
 
-
+getProductsByProveedor(proveedorId: number): Observable<any[]> {
+  return this._HttpClient.get<any[]>(`${environment.api}Producto/proveedor/${proveedorId}`);
+}
 
 
 }

@@ -25,10 +25,10 @@ export class AuthService {
     return this.http.post<any>(`${environment.api}Usuario/login`, { email, contrasena });
   }
 
-  register(nombre: string,email: string ,contrasena: string): Observable<any> {
+  register(nombre: string,email: string ,contrasena: string, telefono: string): Observable<any> {
     let rol:any = 1
     let fechaCreacion: Date= new Date();
-    return this.http.post<any>(`${environment.api}Usuario/usuarios`, { nombre,contrasena,email,rol, fechaCreacion});
+    return this.http.post<any>(`${environment.api}Usuario/usuarios`, { nombre,contrasena,email,rol, fechaCreacion, telefono });
 
   }
 

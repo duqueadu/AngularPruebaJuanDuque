@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  api: 'https://adusoftback-production.up.railway.app/api/',
+  api: 'http://localhost:8085/api/',
 
 };
 

@@ -12,7 +12,7 @@
                             <div class="row g-0 mt-5">
                                 <div class="col-11 col-md-10 col-lg-9 mx-auto">
                                     <h1 class="text-13 text-white fw-600 mb-4">
-                                      Para avanzar al mismo ritmo que el mundo.
+                                        Para avanzar al mismo ritmo que el mundo.
                                     </h1>
                                 </div>
                             </div>
@@ -38,7 +38,9 @@
                     <div class="row g-0">
                         <div class="col-11 col-md-10 col-lg-9 mx-auto">
                             <h3 class="text-12 mb-4">Inscribirse</h3>
-                            <form id="signupForm"  [formGroup]="registerFormGroup">
+                            <form id="signupForm" [formGroup]="registerFormGroup">
+
+                                <!-- Nombre Completo -->
                                 <label class="form-label fw-500" for="fullName">Nombre Completo</label>
                                 <div [classList]="registerForm.name.invalid && isSubmitted?'input-group':'mb-3 input-group'">
                                     <input type="text" class="form-control bg-light border-light" id="fullName"
@@ -48,10 +50,12 @@
                                         <i class="fas fa-user"></i>
                                     </span>
                                 </div>
-                                <small *ngIf="registerForm.name.invalid && isSubmitted" class="d-block text-danger">
+                                <small *ngIf="registerForm.name.invalid && isSubmitted" class="d-block text-danger mb-3">
                                     El nombre es obligatorio
                                 </small>
-                                <label class="form-label fw-500" for="emailAddress">Dirección de correo electrónicos</label>
+
+                                <!-- Correo electrónico -->
+                                <label class="form-label fw-500" for="emailAddress">Dirección de correo electrónico</label>
                                 <div [classList]="registerForm.email.invalid && isSubmitted?'input-group':'mb-3 input-group'">
                                     <input type="email" class="form-control bg-light border-light" id="emailAddress"
                                     [class.is-invalid]="registerForm.email.invalid && isSubmitted"
@@ -60,10 +64,26 @@
                                         <i class="fas fa-envelope"></i>
                                     </span>
                                 </div>
-                                <small *ngIf="registerForm.email.invalid && isSubmitted" class=" d-block text-danger">
+                                <small *ngIf="registerForm.email.invalid && isSubmitted" class="d-block text-danger mb-3">
                                     <span *ngIf="registerForm.email.errors?.required">Se requiere correo electrónico</span>
                                     <span *ngIf="registerForm.email.errors?.email">El correo electrónico no es válido</span>
                                 </small>
+
+                                <!-- Teléfono (NUEVO CAMPO) -->
+                                <label class="form-label fw-500" for="phoneInput">Teléfono / Celular</label>
+                                <div [classList]="registerForm.telefono?.invalid && isSubmitted?'input-group':'mb-3 input-group'">
+                                    <input type="text" class="form-control bg-light border-light" id="phoneInput"
+                                    [class.is-invalid]="registerForm.telefono?.invalid && isSubmitted"
+                                         placeholder="+57 300 000 0000" formControlName="telefono">
+                                    <span class="input-group-text text-muted">
+                                        <i class="fas fa-phone"></i>
+                                    </span>
+                                </div>
+                                <small *ngIf="registerForm.telefono?.invalid && isSubmitted" class="d-block text-danger mb-3">
+                                    El teléfono es requerido
+                                </small>
+
+                                <!-- Contraseña -->
                                 <label class="form-label fw-500" for="loginPassword">Contraseña</label>
                                 <div [classList]="registerForm.password.invalid && isSubmitted?'input-group':'mb-3 input-group'">
                                     <input [type]="passwordVisible?'text':'password'"
@@ -74,35 +94,37 @@
                                         style="cursor: pointer;">
                                         <i [classList]="passwordVisible?'fas fa-eye':'fas fa-eye-slash'"></i>
                                     </span>
-
                                 </div>
-                                <small *ngIf="registerForm.password.invalid && isSubmitted" class="d-block text-danger">
-                                  Contraseña se requiere
+                                <small *ngIf="registerForm.password.invalid && isSubmitted" class="d-block text-danger mb-3">
+                                    Contraseña se requiere
                                 </small>
+
+                                <!-- Términos y condiciones -->
                                 <div class="form-check my-4">
                                     <input id="agree" name="agree" class="form-check-input" type="checkbox">
                                     <label class="form-check-label" for="agree">
-                                      Estoy de acuerdo con el <a href="#">Términos</a> y <a href="#">Privacidad</a>.
+                                        Estoy de acuerdo con los <a href="#">Términos</a> y <a href="#">Privacidad</a>.
                                     </label>
                                 </div>
+
+                                <!-- Botón de envío -->
                                 <div class="d-grid my-4">
                                     <button class="btn btn-dark btn-lg" type="submit" (click)="onSubmit()">
                                       Inscribirse
                                     </button>
                                 </div>
+
                                 <div class="col-12" *ngIf="isSubmitted && authError">
                                     <small class="d-block text-danger">{{ authMessage }}</small>
                                 </div>
                                 <p class="text-2 text-muted text-center">
-                                  ¿Ya eres miembro?<a routerLink="/auth">Iniciar sesión</a>
+                                    ¿Ya eres miembro? <a routerLink="/auth">Iniciar sesión</a>
                                 </p>
                             </form>
                         </div>
                     </div>
                 </div>
             </div>
-
-
         </div>
     </div>
 </div>

@@ -1,152 +1,365 @@
+<!-- Migas de pan (Breadcrumb) -->
 <section class="bg-warning padding-y-sm rounded">
   <div class="container">
-
-      <ol class="breadcrumb ondark mb-0">
-          <li class="breadcrumb-item">
-              <a routerLink="/products">Home</a>
-          </li>
-          <li class="breadcrumb-item">
-              <a routerLink="/products">Product</a>
-          </li>
-          <li class="breadcrumb-item active" aria-current="page">
-              Richtan Hero
-          </li>
-      </ol>
+    <ol class="breadcrumb ondark mb-0">
+      <li class="breadcrumb-item">
+        <a routerLink="/products">Inicio</a>
+      </li>
+      <li class="breadcrumb-item" *ngIf="product?.category?.name">
+        <a routerLink="/products">{{ product?.category?.name }}</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        {{ product?.title || 'Detalle del producto' }}
+      </li>
+    </ol>
   </div>
 </section>
 
-<section class="padding-y">
+<!-- Contenido Principal del Producto -->
+<section class="padding-y" *ngIf="product">
   <div class="container">
-      <div class="row">
-          <aside class="col-lg-4">
-              <owl-carousel-o [options]="slider1Settings" #myCarousel>
-                  <ng-container *ngFor="let slide of product?.images">
-                      <ng-template carouselSlide [id]="slide?.id">
-                          <figure class="zoom-image" style="background-image: url({{slide}});"
-                              [style.backgroundPosition]="backgroundPos" (mousemove)="ZoomImage($event)">
-                              <img class="rounded" src="{{slide}}" alt="clothes"
-                                  onerror="this.onerror = null;this.src='assets/images/ImageNotFound.png'; imgNotFounded=true">
-                          </figure>
-                      </ng-template>
-                  </ng-container>
-              </owl-carousel-o>
-              <owl-carousel-o id="controll" [options]="slider2Settings" (dragging)="nextSlide($event)"
-                  *ngIf="!imgNotFounded">
-                  <ng-container *ngFor="let slide of product?.images">
-                      <ng-template carouselSlide [id]="slide?.id">
-                          <img class="rounded" width="97" src="{{slide}}" alt="clothes"
-                              onerror="this.onerror = null;this.src='assets/images/ImageNotFound.png'">
-                      </ng-template>
-                  </ng-container>
-              </owl-carousel-o>
-          </aside>
-          <main class="col-lg-6">
-              <article class="ps-lg-3">
-                  <h4 class="title text-dark">
-                      {{product?.title }}
+    <div class="row">
+      <!-- Columna Izquierda: Carrusel Principal + Miniaturas -->
+      <aside class="col-lg-5 mb-4 mb-lg-0">
+        <owl-carousel-o [options]="slider1Settings" #myCarousel>
+          <ng-container *ngFor="let slide of product.images; let i = index">
+            <ng-template carouselSlide [id]="'main-' + i">
+              <figure
+                class="zoom-image rounded overflow-hidden position-relative"
+                style="cursor: zoom-in;"
+                [style.backgroundImage]="'url(' + slide + ')'"
+                [style.backgroundPosition]="backgroundPos"
+                (mousemove)="zoomImage($event)"
+                (click)="openImageModal(i)"
+                title="Haz clic para ampliar">
+                <img
+                  class="rounded w-100"
+                  [src]="slide"
+                  [alt]="product.imageTitles[i] || product.title"
+                  (click)="openImageModal(i); $event.stopPropagation()"
+                  (error)="onImageError($event)">
+                <button
+                  type="button"
+                  class="btn btn-dark btn-sm bg-opacity-75 position-absolute bottom-0 end-0 m-2"
+                  style="z-index: 10;"
+                  (click)="openImageModal(i); $event.stopPropagation()">
+                  <i class="fa fa-search-plus me-1"></i> Ampliar
+                </button>
+              </figure>
+            </ng-template>
+          </ng-container>
+        </owl-carousel-o>
 
-                  </h4>
-                  <div class="rating-wrap my-3">
-                      <ul class="rating-stars">
-                          <li style="width:80%" class="stars-active">
-                              <img src="assets/images/stars-active.svg" alt="">
-                          </li>
-                          <li>
-                              <img src="assets/images/starts-disable.svg" alt="">
-                          </li>
-                      </ul>
-                      <b class="label-rating text-warning"> 4.5</b>
-                      <i class="dot"></i>
-                      <span class="label-rating text-muted">
-                          <i class="fa fa-shopping-basket"></i> 154 orders
-                      </span>
-                      <i class="dot"></i>
-                      <span class="label-rating text-success">In stock</span>
-                  </div>
+        <!-- Carrusel de Miniaturas -->
+        <owl-carousel-o
+          id="controll"
+          class="mt-2 d-block"
+          [options]="slider2Settings"
+          (dragging)="nextSlide($event)"
+          *ngIf="product.images.length > 1">
+          <ng-container *ngFor="let slide of product.images; let i = index">
+            <ng-template carouselSlide [id]="'thumb-' + i">
+              <img
+                class="rounded border w-100"
+                style="height: 70px; object-fit: cover; cursor: pointer;"
+                [src]="slide"
+                [alt]="product.imageTitles[i] || product.title"
+                (click)="selectSlide(i)"
+                (error)="onImageError($event)">
+            </ng-template>
+          </ng-container>
+        </owl-carousel-o>
+      </aside>
 
+      <!-- Columna Derecha: Información y Especificaciones -->
+      <main class="col-lg-7">
+        <article class="ps-lg-3">
+          <h4 class="title text-dark mb-2">
+            {{ product.title }}
+          </h4>
 
-                  <div class="mb-3">
-                      <span class="price h5">${{product?.price}}</span>
-                      <span class="text-muted">/per box</span>
-                  </div>
-
-                  <p>
-                      {{product?.description || loremText }}
-                  </p>
-
-                  <dl class="row">
-                      <dt class="col-3">Type:</dt>
-                      <dd class="col-9">{{product?.category?.name}}</dd>
-
-                      <dt class="col-3">Color:</dt>
-                      <dd class="col-9">Brown</dd>
-
-                      <dt class="col-3">Material:</dt>
-                      <dd class="col-9">Cotton, Jeans </dd>
-
-                      <dt class="col-3">Brand:</dt>
-                      <dd class="col-9">Reebook </dd>
-                  </dl>
-
-                  <hr>
-
-                  <div class="row mb-4">
-                      <div class="col-md-4 col-6 mb-2">
-                          <label class="form-label">Size</label>
-                          <select class="form-select">
-                              <option>Small</option>
-                              <option>Medium</option>
-                              <option>Large</option>
-                          </select>
-                      </div>
-                      <div class="col-md-4 col-6 mb-3" *ngIf="productInCartList">
-                          <label class="form-label d-block">Quantity</label>
-                          <div class="input-group input-spinner">
-                              <div class="quantity-selector">
-                                  <button type="button" class="btn  btn-quantity"
-                                      (click)="updateCartItemQuantity(quantity , product  , '-')"
-                                      [disabled]=" quantity == 1">
-                                      <span>-</span>
-                                  </button>
-                                  <div class="quantity-number">{{quantity}}</div>
-                                  <button type="button" class="btn btn-quantity"
-                                      (click)="updateCartItemQuantity(quantity! , product  , '+')">
-                                      <span>+</span>
-                                  </button>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-
-                  <a href="#" class="btn  btn-warning me-2"
-                      (click)="$event.preventDefault(); addProductToCart(product)">
-                      <i class="me-1 fa fa-shopping-basket"></i>
-                      {{productInCartList ? 'Added to cart':'Add to cart'}}
-                  </a>
-                  <a href="#" (click)="$event.preventDefault(); addProductToWishList(product)" *ngIf="!isProductInWishList" class="btn  btn-light me-2">
-                      <i class="fa-regular fa-heart text-danger"></i>
-                      Save
-                  </a>
-                  <a href="#" (click)="$event.preventDefault(); addProductToWishList(product)" *ngIf="isProductInWishList" class="btn  btn-light me-2">
-                      <i  class="me-1 fa fa-heart text-danger"></i> Saved
-                  </a>
-
-              </article>
-          </main>
-      </div>
-
-      <div class="row my-5 position-relative">
-          <div class="title text-md-center mb-2">
-              <span>best match</span>
-              <h4 class="text-dark">Related products</h4>
+          <!-- Calificación y Disponibilidad -->
+          <div class="rating-wrap my-3 d-flex align-items-center flex-wrap gap-2">
+            <ul class="rating-stars mb-0">
+              <li style="width: 90%" class="stars-active">
+                <img src="assets/images/stars-active.svg" alt="Calificación">
+              </li>
+              <li>
+                <img src="assets/images/starts-disable.svg" alt="">
+              </li>
+            </ul>
+            <b class="label-rating text-warning">4.5</b>
+            <i class="dot"></i>
+            <span
+              class="label-rating fw-semibold"
+              [ngClass]="product.stock > 0 ? 'text-success' : 'text-danger'">
+              {{ product.stock > 0 ? 'Disponible (' + product.stock + ' unid.)' : 'Agotado' }}
+            </span>
           </div>
-          <owl-carousel-o [options]="slider3Settings" #myCarousel>
-              <ng-container class="col-md-2 col-6" *ngFor="let item of categoryProducts">
-                  <ng-template carouselSlide [id]="item.id">
-                      <app-product [product]="item"></app-product>
-                  </ng-template>
+
+          <!-- Precio -->
+          <div class="mb-3">
+            <span class="price h4 fw-bold text-dark">
+              {{ product.price | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </span>
+          </div>
+
+          <!-- Descripción -->
+          <p class="text-secondary lh-base">
+            {{ product.description }}
+          </p>
+
+          <!-- Especificaciones Técnicas: Categoría, Stock y Proveedor -->
+          <dl class="row mt-3">
+            <dt class="col-sm-3 text-muted">Categoría:</dt>
+            <dd class="col-sm-9 fw-medium">{{ product.category.name }}</dd>
+
+            <ng-container *ngIf="product.category.description">
+              <dt class="col-sm-3 text-muted">Detalle:</dt>
+              <dd class="col-sm-9">{{ product.category.description }}</dd>
+            </ng-container>
+
+            <dt class="col-sm-3 text-muted">Stock:</dt>
+            <dd class="col-sm-9 fw-medium">{{ product.stock }} unidades</dd>
+
+            <!-- Datos del Proveedor (Oculta contacto y teléfono si es Bienes Raíces / Inmuebles) -->
+            <ng-container *ngIf="product.proveedor?.nombre">
+              <dt class="col-sm-3 text-muted">Proveedor:</dt>
+              <dd class="col-sm-9 fw-semibold text-dark">{{ product.proveedor?.nombre }}</dd>
+
+              <ng-container *ngIf="product.proveedor?.contacto && !esBienesRaices">
+                <dt class="col-sm-3 text-muted">Contacto:</dt>
+                <dd class="col-sm-9">{{ product.proveedor?.contacto }}</dd>
               </ng-container>
-          </owl-carousel-o>
+
+              <ng-container *ngIf="product.proveedor?.telefono && !esBienesRaices">
+                <dt class="col-sm-3 text-muted">Teléfono:</dt>
+                <dd class="col-sm-9">
+                  <a [href]="'tel:' + product.proveedor?.telefono" class="text-decoration-none">
+                    <i class="fa fa-phone me-1 text-muted"></i>{{ product.proveedor?.telefono }}
+                  </a>
+                </dd>
+              </ng-container>
+
+              <ng-container *ngIf="product.proveedor?.email">
+                <dt class="col-sm-3 text-muted">Correo:</dt>
+                <dd class="col-sm-9">
+                  <a [href]="'mailto:' + product.proveedor?.email" class="text-decoration-none">
+                    <i class="fa fa-envelope me-1 text-muted"></i>{{ product.proveedor?.email }}
+                  </a>
+                </dd>
+              </ng-container>
+            </ng-container>
+          </dl>
+
+          <hr>
+
+          <!-- Selector de Cantidad -->
+          <div class="row mb-4" *ngIf="productInCartList">
+            <div class="col-md-4 col-6">
+              <label class="form-label d-block fw-semibold">Cantidad</label>
+              <div class="input-group input-spinner">
+                <div class="quantity-selector d-flex align-items-center">
+                  <button
+                    type="button"
+                    class="btn btn-quantity"
+                    (click)="updateCartItemQuantity(quantity, product, '-')"
+                    [disabled]="quantity <= 1">
+                    <span>-</span>
+                  </button>
+                  <div class="quantity-number px-3 fw-bold">{{ quantity }}</div>
+                  <button
+                    type="button"
+                    class="btn btn-quantity"
+                    (click)="updateCartItemQuantity(quantity, product, '+')"
+                    [disabled]="product.stock > 0 && quantity >= product.stock">
+                    <span>+</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones de Acción -->
+          <div class="d-flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="btn btn-warning"
+              [disabled]="product.stock <= 0"
+              (click)="addProductToCart(product)">
+              <i class="me-1 fa fa-shopping-basket"></i>
+              {{ productInCartList ? 'Agregado al carrito' : 'Agregar al carrito' }}
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-light border"
+              (click)="toggleWishList(product)">
+              <i
+                class="me-1 text-danger"
+                [ngClass]="isProductInWishList ? 'fa fa-heart' : 'fa-regular fa-heart'">
+              </i>
+              {{ isProductInWishList ? 'Guardado' : 'Guardar' }}
+            </button>
+          </div>
+        </article>
+      </main>
+    </div>
+
+    <!-- BANNER SLIDER CARRUSEL: Productos del mismo proveedor -->
+    <div
+      class="mt-5 p-4 bg-light rounded-3 border"
+      *ngIf="product && relatedSupplierProducts.length > 0">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+          <span class="badge bg-warning text-dark mb-1">
+            <i class="fa fa-store me-1"></i> Catálogo del proveedor
+          </span>
+          <h5 class="mb-0 fw-bold text-dark">
+            Productos de {{ product?.proveedor?.nombre }}
+          </h5>
+        </div>
+        <span class="badge bg-white text-dark border px-3 py-2">
+          {{ relatedSupplierProducts.length }} disponible(s)
+        </span>
       </div>
+<owl-carousel-o [options]="supplierSliderSettings" class="supplier-carousel d-block">
+        <ng-container *ngFor="let rel of relatedSupplierProducts">
+          <ng-template carouselSlide [id]="'supplier-prod-' + rel.id">
+            <div
+              class="card h-100 shadow-sm overflow-hidden"
+              [ngClass]="rel.id === product.id ? 'border border-2 border-warning' : 'border-0'">
+              <div class="position-relative">
+                <a [routerLink]="['/products', rel.id]" class="text-decoration-none d-block">
+                  <img
+                    [src]="rel.image"
+                    [alt]="rel.title"
+                    class="card-img-top"
+                    style="height: 185px; object-fit: cover;"
+                    (error)="onImageError($event)">
+                </a>
+                <span
+                  class="badge position-absolute top-0 end-0 m-2"
+                  [ngClass]="rel.stock > 0 ? 'bg-success' : 'bg-danger'">
+                  {{ rel.stock > 0 ? 'Stock: ' + rel.stock : 'Agotado' }}
+                </span>
+                <span
+                  *ngIf="rel.id === product.id"
+                  class="badge bg-warning text-dark position-absolute top-0 start-0 m-2">
+                  Viendo ahora
+                </span>
+              </div>
+
+              <div class="card-body d-flex flex-column bg-white">
+                <small class="text-muted text-uppercase fw-semibold mb-1" style="font-size: 0.75rem;">
+                  {{ rel.categoryName }}
+                </small>
+                <h6 class="card-title text-truncate mb-2" [title]="rel.title">
+                  <a [routerLink]="['/products', rel.id]" class="text-dark text-decoration-none">
+                    {{ rel.title }}
+                  </a>
+                </h6>
+
+                <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                  <span class="fw-bold text-dark fs-6">
+                    {{ rel.price | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </span>
+                  <a
+                    [routerLink]="['/products', rel.id]"
+                    class="btn btn-sm fw-semibold"
+                    [ngClass]="rel.id === product.id ? 'btn-warning text-dark disabled' : 'btn-outline-warning text-dark'">
+                    {{ rel.id === product.id ? 'Actual' : 'Ver detalle' }}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </ng-container>
+      </owl-carousel-o>
+    </div>
   </div>
 </section>
+
+<!-- MODAL LIGHTBOX GRANDE CON ZOOM -->
+<div
+  *ngIf="isModalOpen && product"
+  class="image-lightbox-backdrop"
+  (click)="closeImageModal()">
+
+  <div class="lightbox-toolbar" (click)="$event.stopPropagation()">
+    <span class="text-white fw-semibold">
+      {{ modalImageIndex + 1 }} / {{ product.images.length }}
+      <small class="text-light ms-2 d-none d-sm-inline" *ngIf="product.imageTitles[modalImageIndex]">
+        - {{ product.imageTitles[modalImageIndex] }}
+      </small>
+    </span>
+
+    <div class="d-flex align-items-center gap-2">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-light"
+        (click)="zoomOut($event)"
+        [disabled]="zoomScale <= 1"
+        title="Alejar">
+        <i class="fa fa-search-minus"></i>
+      </button>
+      <span class="text-white small px-1">{{ (zoomScale * 100) | number:'1.0-0' }}%</span>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-light"
+        (click)="zoomIn($event)"
+        [disabled]="zoomScale >= 4"
+        title="Acercar">
+        <i class="fa fa-search-plus"></i>
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-light"
+        (click)="resetZoom($event)"
+        *ngIf="zoomScale > 1"
+        title="Restaurar">
+        100%
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-danger ms-2"
+        (click)="closeImageModal()"
+        title="Cerrar (Esc)">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <button
+    *ngIf="product.images.length > 1"
+    type="button"
+    class="lightbox-nav-btn prev-btn"
+    (click)="prevModalImage($event)"
+    title="Anterior">
+    <i class="fa fa-chevron-left"></i>
+  </button>
+
+  <div
+    class="lightbox-image-wrapper"
+    (click)="toggleModalZoom($event)"
+    (mousemove)="moveModalZoom($event)"
+    (wheel)="onModalWheel($event)">
+    <img
+      [src]="product.images[modalImageIndex]"
+      [alt]="product.imageTitles[modalImageIndex] || product.title"
+      class="lightbox-img"
+      [style.transform]="'scale(' + zoomScale + ')'"
+      [style.transformOrigin]="zoomOrigin"
+      [style.cursor]="zoomScale > 1 ? 'zoom-out' : 'zoom-in'"
+      (error)="onImageError($event)">
+  </div>
+
+  <button
+    *ngIf="product.images.length > 1"
+    type="button"
+    class="lightbox-nav-btn next-btn"
+    (click)="nextModalImage($event)"
+    title="Siguiente">
+    <i class="fa fa-chevron-right"></i>
+  </button>
+</div>

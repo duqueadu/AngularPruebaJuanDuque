@@ -1,4 +1,3 @@
-
 <section id="checkout-complete">
     <div class="checkout-complete-header text-center">
         <div class="rounded-circle checkmark">
@@ -8,24 +7,83 @@
           ¡Felicitaciones! Has completado el pago.
         </h4>
         <p>Hemos recibido tu pedido y será entregado en los próximos 3 días.</p>
+        <span class="badge bg-success">{{ estadoTexto }}</span>
     </div>
+
+    <!-- Resumen principal -->
     <div class="checkout-complete-summary text-center">
         <div class="item">
             <h5>Número de orden</h5>
-            <p>120</p>
+            <p>#{{ numeroOrden }}</p>
         </div>
         <div class="item">
             <h5>Fecha</h5>
-            <p>{{today | date}}</p>
+            <p>{{ fechaOrden | date:'dd/MM/yyyy HH:mm' }}</p>
         </div>
         <div class="item">
             <h5>Total</h5>
-            <p>$ {{totalPrice}}</p>
+            <p>$ {{ totalPrice | number:'1.0-2' }}</p>
         </div>
         <div class="item">
-            <h5>Métodos de pago</h5>
-            <p>Pago con cheque</p>
+            <h5>Método de pago</h5>
+            <p>{{ metodoPagoTexto }}</p>
         </div>
     </div>
-    <button class="btn btn-warning rounded mt-4" (click)="navigateToStore()">Volver a la tienda</button>
+
+    <!-- Botón para alternar detalle -->
+    <div class="text-center mt-3" *ngIf="orden">
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          (click)="toggleDetalle()">
+          {{ mostrarDetalle ? 'Ocultar detalle del registro' : 'Ver detalle completo del registro' }}
+        </button>
+    </div>
+
+    <!-- Detalle ampliado de la respuesta registrada -->
+    <div class="checkout-complete-details mt-4 p-3 border rounded text-start" *ngIf="orden && mostrarDetalle">
+        <h6 class="mb-3 fw-bold">Detalle del registro</h6>
+
+        <div class="row g-2 small">
+            <div class="col-md-6" *ngIf="orden.id != null">
+                <strong>ID en BD:</strong> {{ orden.id }}
+            </div>
+            <div class="col-md-6" *ngIf="orden.referencia || orden.codigoTransaccion">
+                <strong>Referencia / Transacción:</strong> {{ orden.referencia || orden.codigoTransaccion }}
+            </div>
+            <div class="col-md-6" *ngIf="orden.clienteNombre || orden.nombreCliente || orden.usuarioNombre">
+                <strong>Cliente:</strong> {{ orden.clienteNombre || orden.nombreCliente || orden.usuarioNombre }}
+            </div>
+            <div class="col-md-6" *ngIf="orden.cedula || orden.documento">
+                <strong>Documento:</strong> {{ orden.cedula || orden.documento }}
+            </div>
+            <div class="col-md-6" *ngIf="orden.correo || orden.email">
+                <strong>Correo:</strong> {{ orden.correo || orden.email }}
+            </div>
+            <div class="col-md-6" *ngIf="orden.telefono || orden.celular">
+                <strong>Teléfono:</strong> {{ orden.telefono || orden.celular }}
+            </div>
+            <div class="col-md-6" *ngIf="orden.ciudad || orden.ciudadActual">
+                <strong>Ciudad:</strong> {{ orden.ciudad || orden.ciudadActual }}
+            </div>
+            <div class="col-md-6" *ngIf="orden.direccion || orden.direccionEntrega || orden.direccionActual">
+                <strong>Dirección:</strong> {{ orden.direccion || orden.direccionEntrega || orden.direccionActual }}
+            </div>
+            <div class="col-md-6" *ngIf="orden.productoId != null">
+                <strong>Producto ID:</strong> {{ orden.productoId }}
+            </div>
+            <div class="col-md-6" *ngIf="orden.usuarioId != null">
+                <strong>Usuario ID:</strong> {{ orden.usuarioId }}
+            </div>
+            <div class="col-12" *ngIf="orden.observaciones || orden.notas">
+                <strong>Observaciones:</strong> {{ orden.observaciones || orden.notas }}
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <button class="btn btn-warning rounded mt-4" (click)="navigateToStore()">
+          Volver a la tienda
+        </button>
+    </div>
 </section>

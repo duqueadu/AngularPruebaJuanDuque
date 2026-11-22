@@ -1,125 +1,135 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { OwlOptions } from 'ngx-owl-carousel-o';
-import { CarouselService } from 'ngx-owl-carousel-o/lib/services/carousel.service';
-import { ProductService } from '../services/product.service';
+import { Component, OnInit, OnDestroy, ViewChild, HostListener, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { CartService } from '../../services/cart.service';
-import { CartItem } from '../../models/cart';
+import { Subject } from 'rxjs';
+import { takeUntil, distinctUntilChanged, map, filter, switchMap, take } from 'rxjs/operators';
+import { OwlOptions, CarouselComponent } from 'ngx-owl-carousel-o';
 import { HotToastService } from '@ngneat/hot-toast';
-import { WishItem } from '../../models/wishlist';
+
+import { ProductService } from '../services/product.service';
+import { CartService } from '../../services/cart.service';
 import { WishlistService } from '../../services/wishlist.service';
+import { CartItem } from '../../models/cart';
+import { WishItem } from '../../models/wishlist';
+
+export interface ProductDetail {
+  id: number;
+  title: string;
+  price: number;
+  description: string;
+  stock: number;
+  images: string[];
+  imageTitles: string[];
+  category: {
+    id: number;
+    name: string;
+    description: string;
+  };
+  proveedor?: {
+    id: number;
+    nombre: string;
+    contacto: string;
+    email: string;
+    telefono: string;
+  };
+}
+
+export interface SupplierProductSummary {
+  id: number;
+  title: string;
+  price: number;
+  image: string;
+  categoryName: string;
+  stock: number;
+}
 
 @Component({
   selector: 'app-product-details',
   templateUrl: './product-details.component.html',
   styleUrls: ['./product-details.component.css']
 })
-export class ProductDetailsComponent implements OnInit {
+export class ProductDetailsComponent implements OnInit, OnDestroy {
+  @ViewChild('myCarousel') myCarousel!: CarouselComponent;
+
+  private destroy$ = new Subject<void>();
+
+  product: ProductDetail | null = null;
+  productId!: number;
+  relatedSupplierProducts: SupplierProductSummary[] = [];
+
+  cartList: CartItem[] = [];
+  wishItems: WishItem[] = [];
+  productInCartList: CartItem | undefined;
+  isProductInWishList: boolean = false;
+  quantity: number = 0;
+
   backgroundPos: string = 'center center';
-  startPosition: number = 0; // Position of active Slide
-  @ViewChild("myCarousel") myCarousel!: ElementRef;  // slider One Big Image
+  startPosition: number = 0;
+  fallbackImage: string = 'assets/images/ImageNotFound.png';
+  loremText: string = 'Descripción no disponible para este producto.';
+
+  // Estados del Modal con Zoom
+  isModalOpen: boolean = false;
+  modalImageIndex: number = 0;
+  zoomScale: number = 1;
+  zoomOrigin: string = 'center center';
 
   slider1Settings: OwlOptions = {
-    loop: true,
+    loop: false,
     mouseDrag: false,
     touchDrag: false,
     pullDrag: false,
     dots: false,
     navSpeed: 700,
-    // navText: ['', ''],
-    responsive: {
-      0: {
-        items: 1
-      },
-      400: {
-        items: 1
-      },
-      740: {
-        items: 3
-      },
-      940: {
-        items: 4
-      }
-    },
     nav: false,
-    startPosition: this.startPosition
-  }
+    responsive: {
+      0: { items: 1 },
+      400: { items: 1 },
+      740: { items: 1 },
+      940: { items: 1 }
+    }
+  };
 
   slider2Settings: OwlOptions = {
-    loop: true,
+    loop: false,
     mouseDrag: true,
     touchDrag: true,
     pullDrag: true,
     margin: 10,
-    dots: false,
+    dots: true,
     navSpeed: 700,
-    center: true,
-    // navText: ['', ''],
-    responsive: {
-      0: {
-        items: 3
-      },
-      400: {
-        items: 3
-      },
-      740: {
-        items: 3
-      },
-      940: {
-        items: 3
-      }
-    },
-    nav: false,
-    // animateOut: 'slideOutUp',
-    // animateIn: 'slideInUp'
-  }
-
-  slider3Settings: OwlOptions = {
-    loop: true,
-    mouseDrag: true,
-    touchDrag: true,
-    pullDrag: true,
-    margin: 10,
-    dots: false,
-    navSpeed: 700,
-    navText: ['<i class="fa-solid fa-arrow-left"></i>', '<i class="fa-solid fa-arrow-right"></i>'],
-    responsive: {
-      0: {
-        items: 1
-      },
-      400: {
-        items: 1
-      },
-      740: {
-        items: 3
-      },
-      940: {
-        items: 5
-      },
-      1200: {
-        items: 5
-      },
-      1400: {
-        items: 5
-      },
-      1600: {
-        items: 5
-      }
-    },
     nav: true,
-  }
+    navText: [
+      '<i class="fa-solid fa-arrow-left"></i>',
+      '<i class="fa-solid fa-arrow-right"></i>'
+    ],
+    responsive: {
+      0: { items: 3 },
+      400: { items: 4 },
+      740: { items: 5 },
+      940: { items: 6 }
+    }
+  };
 
-  product: any
-  productId!: number
-  categoryId!: number
-  imgNotFounded: boolean = false;
-  cartList!: CartItem[];
-  WishItems!: WishItem[];
-  quantity!: number
-  loremText: string = `Lorem ipsum dolor sit amet consectetur, adipisicing elit. Iusto, quos aspernatur eum dolorr eprehenderit eos et libero debitis itaque voluptatem! Laudantium modi sequi, id numquam liberosed quaerat. Eligendi, ipsum!`;
-  categoryProducts: any
-  isProductInWishList: boolean = false;
-  productInCartList: any;
+  supplierSliderSettings: OwlOptions = {
+    loop: false,
+    mouseDrag: true,
+    touchDrag: true,
+    pullDrag: true,
+    margin: 16,
+    dots: true,
+    navSpeed: 600,
+    nav: true,
+    navText: [
+      '<i class="fa-solid fa-chevron-left"></i>',
+      '<i class="fa-solid fa-chevron-right"></i>'
+    ],
+    responsive: {
+      0: { items: 1 },
+      576: { items: 2 },
+      768: { items: 3 },
+      992: { items: 4 }
+    }
+  };
 
   constructor(
     private _productService: ProductService,
@@ -127,210 +137,308 @@ export class ProductDetailsComponent implements OnInit {
     private _route: ActivatedRoute,
     private _toast: HotToastService,
     private _wishlistService: WishlistService,
-  ) { }
+    private _cdr: ChangeDetectorRef
+  ) {}
 
+  get esBienesRaices(): boolean {
+    const nombreCategoria = this.product?.category?.name?.trim().toLowerCase() || '';
+    return nombreCategoria === 'bienes raíces / inmuebles' || this.product?.category?.id === 12;
+  }
 
-  ZoomImage(event: any) {
-    const { left, top, width, height } = event.target.getBoundingClientRect();
-    const x = ((event.pageX - left) / width) * 100;
-    const y = ((event.pageY - top) / height) * 100;
+  ngOnInit(): void {
+    this.getCartList();
+    this.getWishList();
+
+    this._route.params
+      .pipe(
+        map(params => Number(params['id'])),
+        filter(id => !isNaN(id) && id > 0),
+        distinctUntilChanged(),
+        switchMap(id => {
+          this.productId = id;
+          this.relatedSupplierProducts = [];
+          return this._productService.getSingleProduct(this.productId).pipe(take(1));
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (data: any[]) => this.mapProductResponse(data),
+        error: (err) => {
+          console.error('Error al cargar el producto:', err);
+          this._toast.error('No se pudo cargar la información del producto', { position: 'top-left' });
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent): void {
+    if (!this.isModalOpen) return;
+
+    if (event.key === 'Escape') {
+      this.closeImageModal();
+    } else if (event.key === 'ArrowRight') {
+      this.nextModalImage();
+    } else if (event.key === 'ArrowLeft') {
+      this.prevModalImage();
+    }
+  }
+
+  private mapProductResponse(data: any[]): void {
+    if (!data || data.length === 0) return;
+
+    const item = data[0];
+    const parsedImages = this.parseStringList(item[4]);
+
+    this.product = {
+      id: Number(item[0]),
+      title: item[1],
+      price: Number(item[2]),
+      description: item[3] || this.loremText,
+      images: parsedImages.length > 0 ? parsedImages : [this.fallbackImage],
+      imageTitles: this.parseStringList(item[5]),
+      category: {
+        id: Number(item[6]),
+        name: item[7] || 'General',
+        description: item[8] || ''
+      },
+      stock: Number(item[10] ?? 0),
+      proveedor: item[11] ? {
+        id: Number(item[11]),
+        nombre: item[12] || '',
+        contacto: item[13] || '',
+        email: item[14] || '',
+        telefono: item[15] || ''
+      } : undefined
+    };
+
+    this.syncProductStates();
+
+    if (this.product.proveedor?.id) {
+      this.loadProductsByProveedor(this.product.proveedor.id);
+    }
+  }
+
+  private loadProductsByProveedor(proveedorId: number): void {
+    this._productService
+      .getProductsByProveedor(proveedorId)
+      .pipe(take(1), takeUntil(this.destroy$))
+      .subscribe({
+        next: (rows: any[]) => {
+          if (!Array.isArray(rows) || rows.length === 0) {
+            this.relatedSupplierProducts = [];
+            return;
+          }
+
+          const mapped: SupplierProductSummary[] = rows.map(row => {
+            const imgs = this.parseStringList(row[4]);
+            return {
+              id: Number(row[0]),
+              title: row[1],
+              price: Number(row[2]),
+              image: imgs.length > 0 ? imgs[0] : this.fallbackImage,
+              categoryName: row[7] || 'General',
+              stock: Number(row[10] ?? 0)
+            };
+          });
+
+          // Si el proveedor tiene varios productos, excluye el actual; si solo tiene 1, lo muestra
+          this.relatedSupplierProducts = mapped.length > 1
+            ? mapped.filter(p => p.id !== this.product?.id)
+            : mapped;
+
+          this._cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error al cargar productos del proveedor:', err);
+          this.relatedSupplierProducts = [];
+        }
+      });
+  }
+
+  private parseStringList(input: unknown): string[] {
+    if (typeof input !== 'string' || !input.trim()) return [];
+    return input
+      .split(',')
+      .map(val => val.trim())
+      .filter(val => val.length > 0);
+  }
+
+  private getCartList(): void {
+    this._cartService.cart$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(cart => {
+        this.cartList = cart?.items || [];
+        this.syncProductStates();
+      });
+  }
+
+  private getWishList(): void {
+    this._wishlistService.wishList$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(wish => {
+        this.wishItems = wish?.items || [];
+        this.syncProductStates();
+      });
+  }
+
+  private syncProductStates(): void {
+    if (!this.product) return;
+
+    this.productInCartList = this.cartList.find(item => item.product.id === this.product!.id);
+    this.quantity = this.productInCartList?.quantity || 0;
+    this.isProductInWishList = this.wishItems.some(item => item.product.id === this.product!.id);
+  }
+
+  zoomImage(event: MouseEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    if (!target) return;
+
+    const { left, top, width, height } = target.getBoundingClientRect();
+    const x = ((event.clientX - left) / width) * 100;
+    const y = ((event.clientY - top) / height) * 100;
     this.backgroundPos = `${x}% ${y}%`;
   }
 
-
-  nextSlide(event: any) {
-    if (event.dragging == false) {
-      this.startPosition = event.data.startPosition;
-      const anyService = this.myCarousel as any;
-      const carouselService = anyService.carouselService as CarouselService;
-      carouselService.to(this.startPosition, 3)
+  selectSlide(index: number): void {
+    this.startPosition = index;
+    if (this.myCarousel) {
+      this.myCarousel.to(`main-${index}`);
     }
   }
-  validarUrls(input:any) {
-    // Verifica si el input es null, undefined o no es una cadena
-    if (input === null || input === undefined || typeof input !== "string") {
-      console.log("El input es null, undefined o no es una cadena válida.");
-      return [];
+
+  nextSlide(event: any): void {
+    if (event?.dragging === false && event?.data) {
+      this.selectSlide(event.data.startPosition);
     }
-
-    // Divide la cadena en un array, eliminando espacios innecesarios
-    const urlArray = input.split(",").map(url => url.trim());
-
-    // Verifica si el array está vacío o contiene solo valores vacíos
-    if (urlArray.length === 0 || (urlArray.length === 1 && urlArray[0] === "")) {
-      console.log("El array está vacío.");
-      return [];
-    }
-
-    // Valida cada URL en el array con una expresión regular
-    const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/;
-    const urlValidas = urlArray.filter(url => urlRegex.test(url));
-
-    if (urlValidas.length === 0) {
-      console.log("No hay URLs válidas.");
-      return [];
-    }
-
-    // Devuelve el array de URLs válidas
-    console.log("URLs válidas:", urlValidas);
-    return urlValidas;
   }
 
-
-   createProduct(dataArray:any) {
-
-    const products = []; // Array para almacenar los productos
-
-        for (let i = 0; i < dataArray.length; i++) {
-          const data = dataArray[i]; // Obtener el array del producto actual
-          var urls:any = this.validarUrls(data[4]);
-          var category:any = this.validarUrls(data[5]);
-          products.push({
-            id: data[0], // ID estático o dinámico
-            title: data[1], // Segundo valor como título
-            price: data[2], // Tercer valor como precio
-
-            description: data[3] || "Descripción no disponible", // Descripción del producto, valor por defecto si no se proporciona
-
-            images:urls,
-            creationAt: data[5], // Fecha de creación
-            updatedAt: data[6], // Fecha de actualización
-            category: category, // Objeto de la categoría
-          });
-        }
-        return  products;
-
-
+  openImageModal(index: number): void {
+    this.modalImageIndex = index;
+    this.resetZoom();
+    this.isModalOpen = true;
+    document.body.style.overflow = 'hidden';
   }
 
-
-
-  getproduct() {
-    this._productService.getSingleProduct(this.productId).subscribe((data) => {
-
-     const formattedData = data.map((item:any) => {
-          return {
-            id: item[0],
-            title: item[1],
-            price: item[2],
-            mainImage: item[3],
-            images: item[4].split(', '), // Separa las imágenes en un arreglo
-            codes: item[5].split(', '),   // Separa los códigos en un arreglo
-            creationAt: item[6],
-            updatedAt: item[7],
-            category: item[8],
-            description: item[9]
-          };
-        });
-
-        console.log(formattedData);
-      this.product =formattedData
-      this.categoryId = this.product.category.id;
-      this.getProductsByCategory(this.categoryId);
-      this.productInCartList = this.checkProductInCartList(this.product);
-      this.isProductInWishList = this.productInWishList(this.product);
-      if (this.product.images.length == 1) {
-        this.imgNotFounded = true
-      }
-    })
+  closeImageModal(): void {
+    this.isModalOpen = false;
+    this.resetZoom();
+    document.body.style.overflow = 'auto';
   }
 
-  getCartList() {
-    this._cartService.cart$.subscribe((cart) => {
-      this.cartList = cart.items!;
-      if(this.product){
-        this.productInCartList = this.checkProductInCartList(this.product);
-      }
-    });
+  nextModalImage(event?: Event): void {
+    if (event) event.stopPropagation();
+    if (!this.product) return;
+    this.resetZoom();
+    this.modalImageIndex = (this.modalImageIndex + 1) % this.product.images.length;
   }
 
-  getWishList() {
-    this._wishlistService.wishList$.subscribe((cart) => {
-      this.WishItems = cart.items!;
-      if(this.product){
-        this.isProductInWishList = this.productInWishList(this.product);
-      }
-    });
+  prevModalImage(event?: Event): void {
+    if (event) event.stopPropagation();
+    if (!this.product) return;
+    this.resetZoom();
+    this.modalImageIndex =
+      (this.modalImageIndex - 1 + this.product.images.length) % this.product.images.length;
   }
 
-  checkProductInCartList(product: any) {
-    const cartItemExist = this.cartList.find((item) => item.product.id === product.id);
-    this.quantity = cartItemExist?.quantity || 0
-    return cartItemExist;
-  }
-
-  productInWishList(product: any) {
-    const WishItemExist = this.WishItems.some((item) => item.product.id === product.id);
-    return WishItemExist;
-  }
-
-  updateCartItemQuantity(value: number, product: any, operation: string) {
-    if (operation == "+") {
-      value++;
+  toggleModalZoom(event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.zoomScale > 1) {
+      this.resetZoom();
     } else {
-      value--;
+      this.zoomScale = 2.5;
+      this.moveModalZoom(event);
     }
+  }
+
+  zoomIn(event: Event): void {
+    event.stopPropagation();
+    if (this.zoomScale < 4) {
+      this.zoomScale = Number((this.zoomScale + 0.5).toFixed(1));
+    }
+  }
+
+  zoomOut(event: Event): void {
+    event.stopPropagation();
+    if (this.zoomScale > 1) {
+      this.zoomScale = Number((this.zoomScale - 0.5).toFixed(1));
+      if (this.zoomScale === 1) this.zoomOrigin = 'center center';
+    }
+  }
+
+  resetZoom(event?: Event): void {
+    if (event) event.stopPropagation();
+    this.zoomScale = 1;
+    this.zoomOrigin = 'center center';
+  }
+
+  moveModalZoom(event: MouseEvent): void {
+    if (this.zoomScale <= 1) return;
+    const target = event.currentTarget as HTMLElement;
+    if (!target) return;
+
+    const { left, top, width, height } = target.getBoundingClientRect();
+    const x = ((event.clientX - left) / width) * 100;
+    const y = ((event.clientY - top) / height) * 100;
+    this.zoomOrigin = `${x}% ${y}%`;
+  }
+
+  onModalWheel(event: WheelEvent): void {
+    event.preventDefault();
+    if (event.deltaY < 0) {
+      this.zoomIn(event);
+    } else {
+      this.zoomOut(event);
+    }
+  }
+
+  onImageError(event: Event): void {
+    const imgElement = event.target as HTMLImageElement;
+    if (imgElement && imgElement.src !== this.fallbackImage) {
+      imgElement.src = this.fallbackImage;
+    }
+  }
+
+  updateCartItemQuantity(currentValue: number, product: ProductDetail, operation: '+' | '-'): void {
+    const newQuantity = operation === '+' ? currentValue + 1 : currentValue - 1;
+    if (newQuantity < 1) return;
+    if (product.stock > 0 && newQuantity > product.stock) return;
+
     this._cartService.setCartItem(
       {
-        product: product,
-        quantity: value,
+        product: product as any,
+        quantity: newQuantity
       },
       true
     );
   }
 
-  addProductToCart(item: any) {
+  addProductToCart(item: ProductDetail): void {
+    if (item.stock <= 0) {
+      this._toast.error('Este producto no tiene stock disponible', { position: 'top-left' });
+      return;
+    }
+
     const cartItem: CartItem = {
-      product: item,
+      product: item as any,
       quantity: 1
     };
     this._cartService.setCartItem(cartItem);
-    this._toast.success('Product added to cart successfully',
-      {
-        position: 'top-left'
-      });
+    this._toast.success('Producto agregado al carrito', { position: 'top-left' });
   }
 
-  addProductToWishList(item: any) {
-    const WishItem: WishItem = {
-      product: item
-    };
+  toggleWishList(item: ProductDetail): void {
     if (this.isProductInWishList) {
-      this._wishlistService.deleteWishItem(WishItem.product.id);
-      this._toast.error('Product removed from wishlist',
-        {
-          position: 'top-left'
-        });
-    }
-    else {
-      this._wishlistService.setWishItem(WishItem);
-      this._toast.success('Product added to wishlist successfully',
-        {
-          position: 'top-left'
-        });
+      this._wishlistService.deleteWishItem(item.id.toString());
+      this._toast.error('Producto eliminado de favoritos', { position: 'top-left' });
+    } else {
+      const wishItem: WishItem = { product: item as any };
+      this._wishlistService.setWishItem(wishItem);
+      this._toast.success('Producto guardado en favoritos', { position: 'top-left' });
     }
   }
-
-
-
-  getProductsByCategory(categoryId: number) {
-    this._productService.getProductsByCategory(categoryId).subscribe((data) => {
-      console.log(data);
-      console.log(data);
-      this.categoryProducts = this.createProduct(data);
-
-      console.log(this.categoryProducts);
-    })
-  }
-
-  ngOnInit(): void {
-    this._route.params.subscribe(params => {
-      this.productId = params['id'];
-      this.getproduct();
-      this.getCartList();
-      this.getWishList();
-    });
-
-  }
-
 }
