@@ -239,6 +239,7 @@
                     (error)="onImageError($event)">
                 </a>
                 <span
+                  *ngIf="![12, 13, 14, 15].includes(product.id)"
                   class="badge position-absolute top-0 end-0 m-2"
                   [ngClass]="rel.stock > 0 ? 'bg-success' : 'bg-danger'">
                   {{ rel.stock > 0 ? 'Stock: ' + rel.stock : 'Agotado' }}
